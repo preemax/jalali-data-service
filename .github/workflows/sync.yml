@@ -23,10 +23,11 @@ jobs:
       - name: Run Scraper
         run: python scraper.py
 
-      - name: Commit and Push changes
+- name: Commit and Push changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
           git commit -m "Update calendar data from time.ir" || echo "No changes to commit"
+          git pull --rebase origin main # گرفتن تغییرات احتمالی و ترکیب با دیتای جدید
           git push
