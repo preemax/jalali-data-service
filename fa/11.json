@@ -1,4 +1,16 @@
 {
   "month": 11,
-  "events": []
+  "events": [
+    {
+      "d": 1,
+      "t": "Nowruz",
+      "h": true
+    },
+    {
+      "d": 13,
+      "t": "Sizdah Be Dar",
+      "h": true
+    }
+  ],
+  "status": "debug"
 }
