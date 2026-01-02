@@ -1,6 +1,5 @@
-# تاریخ ایجاد: ۱۴۰۴/۱۰/۱۲ - ۰۵:۰۱ صبح
-# نام فایل: scraper.py
-# هدف: اصلاح مسیر استخراج از نقطه استیبل
+# تاریخ ایجاد: ۱۴۰۴/۱۰/۱۲ - ۰۵:۰۸ صبح
+# اصلاحیه: حذف فیلتر سال برای اطمینان از خروجی دیتای استیبل
 
 import requests
 import json
@@ -9,48 +8,34 @@ import os
 os.makedirs('fa', exist_ok=True)
 os.makedirs('en', exist_ok=True)
 
-def get_stable_data():
-    url = "https://raw.githubusercontent.com/kayvan-sylvan/work-day-calendar/master/iranian-holidays.json"
-    try:
-        response = requests.get(url, timeout=20)
-        if response.status_code == 200:
-            data = response.json()
-            # چاپ برای دیباگ در کنسول گیت‌هاب
-            print(f"Data received. Type: {type(data)}")
-            return data
-        return None
-    except Exception as e:
-        print(f"Error: {e}")
-        return None
-
 def translate_event(text):
-    subs = {"عید": "Eid", "نوروز": "Nowruz", "وفات": "Martyrdom", "ولادت": "Birthday"}
+    subs = {"عید": "Eid", "نوروز": "Nowruz", "وفات": "Martyrdom", "ولادت": "Birthday", "شهادت": "Martyrdom"}
     for fa, en in subs.items():
         text = text.replace(fa, en)
     return text
 
 def run():
-    raw_data = get_stable_data()
-    if not raw_data:
+    url = "https://raw.githubusercontent.com/kayvan-sylvan/work-day-calendar/master/iranian-holidays.json"
+    response = requests.get(url, timeout=20)
+    
+    if response.status_code != 200:
+        print("Failed to fetch source")
         return
 
-    # نکته حیاتی: اگر دیتا به صورت لیست مستقیم است یا داخل کلید events
-    events = raw_data if isinstance(raw_data, list) else raw_data.get('events', [])
-    
-    if not events:
-        print("No events found in the JSON!")
-        return
+    events = response.json()
+    # اگر فایل به صورت دیکشنری بود و کلید events داشت
+    if isinstance(events, dict):
+        events = events.get('events', [])
 
     calendar_fa = {m: [] for m in range(1, 13)}
     calendar_en = {m: [] for m in range(1, 13)}
 
     for event in events:
         try:
-            # ساختار فایل Kayvan: "date": "1404/01/01"
-            date_str = event.get('date', '')
-            if not date_str: continue
-            
+            date_str = event.get('date', '') # فرمت: "1403/01/01"
             parts = date_str.split('/')
+            
+            # ما فقط ماه و روز را می‌خواهیم، سال فعلاً مهم نیست برای تست
             month = int(parts[1])
             day = int(parts[2])
             title = event.get('title', '')
@@ -61,15 +46,14 @@ def run():
         except:
             continue
 
-    info_header = "Stable Sync: 1404/10/12"
+    # ذخیره اجباری ۱۲ فایل
     for m in range(1, 13):
-        # ذخیره فایل‌ها (حتی اگر خالی باشند تا زمان ویرایش عوض شود)
         with open(f'fa/{m}.json', 'w', encoding='utf-8') as f:
-            json.dump({"month": m, "events": calendar_fa[m], "info": info_header}, f, ensure_ascii=False, indent=2)
+            json.dump({"m": m, "events": calendar_fa[m]}, f, ensure_ascii=False)
         with open(f'en/{m}.json', 'w', encoding='utf-8') as f:
-            json.dump({"month": m, "events": calendar_en[m], "info": info_header}, f, ensure_ascii=False, indent=2)
-
-    print("Process Finished Successfully.")
+            json.dump({"m": m, "events": calendar_en[m]}, f, ensure_ascii=False)
+    
+    print("Files forced to update.")
 
 if __name__ == "__main__":
     run()
