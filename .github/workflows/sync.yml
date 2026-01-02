@@ -1,0 +1,32 @@
+name: Sync Calendar Data
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # هر روز ساعت ۳:۳۰ صبح به وقت ایران (حدودی) اجرا می‌شود
+  workflow_dispatch: # این خط به شما دکمه "اجرای دستی" می‌دهد
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run Scraper
+        run: python scraper.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Update calendar data from time.ir" || echo "No changes to commit"
+          git push
